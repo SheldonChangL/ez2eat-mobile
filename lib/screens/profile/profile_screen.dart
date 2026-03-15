@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/orders_provider.dart';
 import 'payment_screen.dart';
 import 'contact_screen.dart';
+import 'orders_screen.dart';
+import 'favorites_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -67,6 +70,43 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: [
+                ListTile(
+                  leading: const Icon(Icons.favorite_border),
+                  title: const Text('收藏市集'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+                  ),
+                ),
+                const Divider(height: 1),
+                Consumer(builder: (context, ref, _) {
+                  final count = ref.watch(ordersProvider).length;
+                  return ListTile(
+                    leading: const Icon(Icons.receipt_long_outlined),
+                    title: const Text('訂單紀錄'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (count > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text('$count', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
+                          ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                    ),
+                  );
+                }),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.credit_card),
                   title: const Text('付款資訊'),

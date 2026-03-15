@@ -25,6 +25,16 @@ class CartNotifier extends Notifier<List<CartItem>> {
     state = state.where((item) => item.product.id != productId).toList();
   }
 
+  void updateQuantity(String productId, int quantity) {
+    state = [
+      for (final item in state)
+        if (item.product.id == productId)
+          CartItem(product: item.product, quantity: quantity)
+        else
+          item,
+    ];
+  }
+
   void clear() => state = [];
 
   int get totalCount => state.fold(0, (sum, item) => sum + item.quantity);
