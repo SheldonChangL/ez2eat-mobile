@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../data/mock_markets.dart';
 import '../../models/market.dart';
 import '../markets/market_detail_screen.dart';
@@ -23,11 +24,52 @@ const _marketCoords = {
 class _MapScreenState extends State<MapScreen> {
   GoogleMapController? _controller;
   Market? _selectedMarket;
+  bool _locating = false;
+  bool _locationGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermission();
+  }
+
+  Future<void> _checkPermission() async {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      setState(() => _locationGranted = true);
+    }
+  }
 
   static const _initialPosition = CameraPosition(
     target: LatLng(25.0330, 121.5654),
     zoom: 13,
   );
+
+  Future<void> _goToMyLocation() async {
+    setState(() => _locating = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('請在設定中允許位置權限')),
+          );
+        }
+        return;
+      }
+      setState(() => _locationGranted = true);
+      final pos = await Geolocator.getCurrentPosition();
+      await _controller?.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(pos.latitude, pos.longitude), 15),
+      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
 
   late final Set<Marker> _markers = {
     for (final market in mockMarkets)
@@ -63,12 +105,13 @@ class _MapScreenState extends State<MapScreen> {
         GoogleMap(
           initialCameraPosition: _initialPosition,
           markers: _markers,
+          myLocationEnabled: _locationGranted,
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
           onMapCreated: (controller) => _controller = controller,
           onTap: (_) => setState(() => _selectedMarket = null),
         ),
-        // Zoom 按鈕
+        // Zoom + 定位按鈕
         Positioned(
           right: 16,
           bottom: _selectedMarket != null ? 200 : 24,
@@ -77,6 +120,18 @@ class _MapScreenState extends State<MapScreen> {
               _ZoomButton(icon: Icons.add, onTap: _zoomIn),
               const SizedBox(height: 8),
               _ZoomButton(icon: Icons.remove, onTap: _zoomOut),
+              const SizedBox(height: 16),
+              _locating
+                  ? Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : _ZoomButton(icon: Icons.my_location, onTap: _goToMyLocation),
             ],
           ),
         ),

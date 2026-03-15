@@ -29,6 +29,7 @@ Flutter SDK 位於 `C:\Users\ASUS\flutter\bin\flutter`。
 | go_router | 底部導航路由 |
 | google_maps_flutter | 地圖（Android/iOS only） |
 | google_sign_in | Google 登入 |
+| geolocator | 取得目前位置 |
 | cached_network_image | 圖片快取 |
 | dio | HTTP（待串接 API） |
 
@@ -72,6 +73,9 @@ lib/
 - iOS：`GMSServices.provideAPIKey()` 在 `ios/Runner/AppDelegate.swift`
 - Web：顯示佔位畫面（`kIsWeb` 判斷）
 - Marker tap → 底部浮出市集資訊卡 → 「查看詳情」跳到詳情頁
+- 右下角定位按鈕：請求位置權限 → 移動鏡頭到目前位置 + 藍色定位圓圈
+- `myLocationEnabled` 動態控制（需權限才啟用，`initState` 自動檢查已有權限）
+- Android 位置權限：`ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`（AndroidManifest.xml）
 
 ### Google Sign-In
 - Android：需在 Google Cloud Console 建立 Android OAuth Client ID
