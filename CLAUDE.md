@@ -69,8 +69,9 @@ lib/
 ```
 
 ### Google Maps
-- Android：API Key 寫在 `android/app/src/main/AndroidManifest.xml`
-- iOS：`GMSServices.provideAPIKey()` 在 `ios/Runner/AppDelegate.swift`
+- Android：API Key 透過 `android/local.properties`（gitignored）→ `build.gradle.kts` manifestPlaceholders → `AndroidManifest.xml` 的 `${MAPS_API_KEY}` 注入
+- iOS：API Key 透過 `ios/Flutter/Secrets.xcconfig`（gitignored）→ `Info.plist` 的 `$(MAPS_API_KEY)` → `AppDelegate.swift` 從 `Bundle.main.infoDictionary` 讀取
+- **絕對禁止**將任何 API Key、token、secret 直接寫在程式碼或任何會被 git 追蹤的檔案裡
 - Web：顯示佔位畫面（`kIsWeb` 判斷）
 - Marker tap → 底部浮出市集資訊卡 → 「查看詳情」跳到詳情頁
 - 右下角定位按鈕：請求位置權限 → 移動鏡頭到目前位置 + 藍色定位圓圈
@@ -86,6 +87,25 @@ lib/
 ### State Management
 所有 Provider 皆為 `NotifierProvider`，不做持久化（重啟 App 後狀態重置）。
 待串接後端後再加 `SharedPreferences` 或 `flutter_secure_storage`。
+
+## Secrets 管理規則
+
+**任何 key、token、secret、password 都不可以硬寫在程式碼裡。**
+
+| 平台 | 存放位置 | gitignore 狀態 | 讀取方式 |
+|------|----------|---------------|----------|
+| Android | `android/local.properties` | ✅ 已 ignore（`android/.gitignore`） | `build.gradle.kts` → `manifestPlaceholders` → `AndroidManifest.xml` |
+| iOS | `ios/Flutter/Secrets.xcconfig` | ✅ 已 ignore（`ios/.gitignore`） | `Info.plist` → `AppDelegate.swift` |
+| Dart/Flutter | `--dart-define` 或 gitignored 的 `.env` | — | `String.fromEnvironment()` |
+
+### 新增 secret 的標準流程
+1. 把 key 加進對應平台的 gitignored 檔案（`local.properties` / `Secrets.xcconfig`）
+2. 修改 build 設定讓 key 注入（`manifestPlaceholders` / `xcconfig` variable）
+3. 程式碼中只引用佔位符，不寫明文
+4. Commit 前執行 `git status` 確認 secrets 檔案**未出現**在變更清單裡
+
+> 背景：2026-03-16 曾將 Google Maps API Key 直接 commit 進 `AndroidManifest.xml`
+> 和 `AppDelegate.swift` 並推上 GitHub，導致 key 外洩，需緊急撤銷並重換。
 
 ### 待完成
 - [ ] 串接 ez2eat 後端 API（替換 `mock_markets.dart`）
